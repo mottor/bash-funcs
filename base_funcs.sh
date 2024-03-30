@@ -1,9 +1,5 @@
 #!/bin/bash
 
-CUR_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-ME=$(basename $0)
-
-
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -15,20 +11,38 @@ NC='\033[0m' # No Color
 
 export CHECK_MARK="\u2705"
 export CROSS_MARK="\u274c"
-export WARN_MARK="\u26A0"
+export WARN_MARK="\u26A0\ufe0f"
+export THUMBS_UP_MARK="\U0001F44D"
+export PARTY_POPPER_MARK="\U0001F389"
 
 # =================================================================================
 
 logMessage() {
-    echo -e "${LIGHT_GRAY}${ME}:${NC} $@"
+    echo -e "${LIGHT_GRAY}base_funcs:${NC} $@"
+}
+
+logRed() {
+    echo -e "${LIGHT_GRAY}base_funcs:${NC} ${RED}$@${NC}"
 }
 
 logGreen() {
-    echo -e "${LIGHT_GRAY}${ME}:${NC} ${GREEN}$@${NC}"
+    echo -e "${LIGHT_GRAY}base_funcs:${NC} ${GREEN}$@${NC}"
 }
 
-logError() {
-    echo -e "${LIGHT_GRAY}${ME}:${NC} ${RED}$@${NC}"
+logYellow() {
+    echo -e "${LIGHT_GRAY}base_funcs:${NC} ${YELLOW}$@${NC}"
+}
+
+logBlue() {
+    echo -e "${LIGHT_GRAY}base_funcs:${NC} ${BLUE}$@${NC}"
+}
+
+logPurple() {
+    echo -e "${LIGHT_GRAY}base_funcs:${NC} ${PURPLE}$@${NC}"
+}
+
+logCyan() {
+    echo -e "${LIGHT_GRAY}base_funcs:${NC} ${CYAN}$@${NC}"
 }
 
 # =================================================================================
@@ -55,7 +69,7 @@ function mattermost_auth() {
     fi
 
     if [ -z "$MM_TOKEN_PATH" ]; then
-        MM_TOKEN_PATH="$CUR_DIR/mattermost_token"
+        MM_TOKEN_PATH="./mattermost_token"
     fi
 
     if [ -f "$MM_TOKEN_PATH" ]; then

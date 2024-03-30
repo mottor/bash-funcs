@@ -164,7 +164,7 @@ function mattermost_post_message() {
     fi
 
     API_URL="api/v4/posts"
-    HAS_RELOGIN_ATTEMPT="0"
+    TRIED_RELOGIN="false"
 
     while true; do
         CURL_RESPONSE_FILE=$(mktemp)
@@ -172,22 +172,26 @@ function mattermost_post_message() {
         RESPONSE=$(head -n 1 $CURL_RESPONSE_FILE)
         rm $CURL_RESPONSE_FILE
 
-        if [ "$RESPONSE_STATUS" == "201" ]; then
+        case "$RESPONSE_STATUS" in
+        201)
             POST_ID=$(echo $RESPONSE | jq -r ".id")
             echo "$POST_ID"
             return 0
-        elif [ "$RESPONSE_STATUS" == "401" ]; then
-            if [ "$HAS_RELOGIN_ATTEMPT" == "0" ]; then
+            ;;
+        401)
+            if [ "$TRIED_RELOGIN" == "false" ]; then
                 mattermost_auth
-                HAS_RELOGIN_ATTEMPT="1"
+                TRIED_RELOGIN="true"
             else
                 echo "ERROR: запрос /$API_URL вернул статус = $RESPONSE_STATUS. ПОВТОРНО! Raw response: $RESPONSE"
                 return 1
             fi
-        else
+            ;;
+        *)
             echo "ERROR: запрос /$API_URL вернул статус = $RESPONSE_STATUS. Raw response: $RESPONSE"
             return 1
-        fi
+            ;;
+        esac
     done
 }
 

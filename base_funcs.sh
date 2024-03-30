@@ -95,22 +95,22 @@ function mattermost_auth() {
             exit 1
         fi
 
-        local API_URL="api/v4/users/login"
-        local REQ_DATA=$(jq -c --null-input --arg user "$MM_USER" --arg pass "$MM_PASS" '{"login_id": $user, "password": $pass}')
-        local RESPONSE=$(curl -s -i -H "Content-Type: application/json; charset=utf-8" -X POST -d "$REQ_DATA" "$MATTERMOST_BASE_URL/$API_URL" | tr -d '\r')
-        local RESPONSE_STATUS=$(echo "$RESPONSE" | grep "HTTP/" | cut -d' ' -f 2)
+        local _API_URL="api/v4/users/login"
+        local _REQ_DATA=$(jq -c --null-input --arg user "$MM_USER" --arg pass "$MM_PASS" '{"login_id": $user, "password": $pass}')
+        local _RESPONSE=$(curl -s -i -H "Content-Type: application/json; charset=utf-8" -X POST -d "$_REQ_DATA" "$MATTERMOST_BASE_URL/$_API_URL" | tr -d '\r')
+        local _RESPONSE_STATUS=$(echo "$_RESPONSE" | grep "HTTP/" | cut -d' ' -f 2)
 
-        if [ "$RESPONSE_STATUS" == "200" ]; then
-            local TOKEN=$(echo "$RESPONSE" | grep -Fi token | awk 'BEGIN {FS=": "}/^token/{print $2}')
-            if [ "$TOKEN" != "" ]; then
-                echo -n "$TOKEN" > "$MM_TOKEN_PATH"
-                export MATTERMOST_TOKEN="$TOKEN"
+        if [ "$_RESPONSE_STATUS" == "200" ]; then
+            local _TOKEN=$(echo "$_RESPONSE" | grep -Fi token | awk 'BEGIN {FS=": "}/^token/{print $2}')
+            if [ "$_TOKEN" != "" ]; then
+                echo -n "$_TOKEN" > "$MM_TOKEN_PATH"
+                export MATTERMOST_TOKEN="$_TOKEN"
             else
-                echo "ERROR: не получили токен. Raw response: $RESPONSE"
+                echo "ERROR: не получили токен. Raw response: $_RESPONSE"
                 exit 1
             fi
         else
-            echo "ERROR: запрос /$API_URL вернул статус = $RESPONSE_STATUS. Raw response: $RESPONSE"
+            echo "ERROR: запрос /$_API_URL вернул статус = $_RESPONSE_STATUS. Raw response: $_RESPONSE"
             exit 1
         fi
     fi
@@ -131,9 +131,9 @@ function mattermost_post_message() {
         exit 1
     fi
 
-    local CHANNEL_ID="$1"
-    if [ "$CHANNEL_ID" == "" ]; then
-        echo "ERROR: аргумент CHANNEL_ID не задан или пустой."
+    local _CHANNEL_ID="$1"
+    if [ "$_CHANNEL_ID" == "" ]; then
+        echo "ERROR: аргумент $_CHANNEL_ID не задан или пустой."
         exit 1
     fi
 
@@ -145,50 +145,50 @@ function mattermost_post_message() {
 
     local ROOT_POST_ID="${3:-}"
 
-    case "$CHANNEL_ID" in
+    case "$_CHANNEL_ID" in
     team_dev)
-        CHANNEL_ID="$TEAM_DEV_CHANNEL_ID"
+        _CHANNEL_ID="$TEAM_DEV_CHANNEL_ID"
         ;;
     updates)
-        CHANNEL_ID="$UPDATES_CHANNEL_ID"
+        _CHANNEL_ID="$UPDATES_CHANNEL_ID"
         ;;
     *)
     esac
 
-    local DATE=$(date '+%d.%m.%Y')
-    local TEXT=`echo "$MESSAGE" | sed -e "s/{DATE}/$DATE/g"`
-    local REQ_DATA=$(jq -c --null-input --arg channel_id "$CHANNEL_ID" --arg message "$TEXT" '{"channel_id": $channel_id, "message": $message, "props":{}}')
+    local _DATE=$(date '+%d.%m.%Y')
+    local _TEXT=`echo "$MESSAGE" | sed -e "s/{DATE}/$_DATE/g"`
+    local _REQ_DATA=$(jq -c --null-input --arg channel_id "$_CHANNEL_ID" --arg message "$_TEXT" '{"channel_id": $channel_id, "message": $message, "props":{}}')
 
     if [ "$ROOT_POST_ID" != "" ]; then
-        REQ_DATA=$(echo $REQ_DATA | jq -c --arg root_post_id "$ROOT_POST_ID" '.root_id = $root_post_id')
+        _REQ_DATA=$(echo $_REQ_DATA | jq -c --arg root_post_id "$ROOT_POST_ID" '.root_id = $root_post_id')
     fi
 
-    local API_URL="api/v4/posts"
-    local TRIED_RELOGIN="false"
+    local _API_URL="api/v4/posts"
+    local _TRIED_RELOGIN="false"
 
     while true; do
-        local CURL_RESPONSE_FILE=$(mktemp)
-        local RESPONSE_STATUS=$(curl -s -o $CURL_RESPONSE_FILE -w "%{http_code}" -H "Authorization: Bearer $MATTERMOST_TOKEN" -H "Content-Type: application/json; charset=utf-8" -X POST -d "${REQ_DATA//\\\\n/\\n}" "$MATTERMOST_BASE_URL/$API_URL" | tr -d '\r')
-        local RESPONSE=$(head -n 1 $CURL_RESPONSE_FILE)
-        rm $CURL_RESPONSE_FILE
+        local _CURL_RESPONSE_FILE=$(mktemp)
+        local _RESPONSE_STATUS=$(curl -s -o $_CURL_RESPONSE_FILE -w "%{http_code}" -H "Authorization: Bearer $MATTERMOST_TOKEN" -H "Content-Type: application/json; charset=utf-8" -X POST -d "${_REQ_DATA//\\\\n/\\n}" "$MATTERMOST_BASE_URL/$_API_URL" | tr -d '\r')
+        local _RESPONSE=$(head -n 1 $_CURL_RESPONSE_FILE)
+        rm $_CURL_RESPONSE_FILE
 
-        case "$RESPONSE_STATUS" in
+        case "$_RESPONSE_STATUS" in
         201)
-            POST_ID=$(echo $RESPONSE | jq -r ".id")
+            POST_ID=$(echo $_RESPONSE | jq -r ".id")
             echo "$POST_ID"
             return 0
             ;;
         401)
-            if [ "$TRIED_RELOGIN" == "false" ]; then
+            if [ "$_TRIED_RELOGIN" == "false" ]; then
                 mattermost_auth
-                TRIED_RELOGIN="true"
+                _TRIED_RELOGIN="true"
             else
-                echo "ERROR: запрос /$API_URL вернул статус = $RESPONSE_STATUS. ПОВТОРНО! Raw response: $RESPONSE"
+                echo "ERROR: запрос /$_API_URL вернул статус = $_RESPONSE_STATUS. ПОВТОРНО! Raw response: $_RESPONSE"
                 return 1
             fi
             ;;
         *)
-            echo "ERROR: запрос /$API_URL вернул статус = $RESPONSE_STATUS. Raw response: $RESPONSE"
+            echo "ERROR: запрос /$_API_URL вернул статус = $_RESPONSE_STATUS. Raw response: $_RESPONSE"
             return 1
             ;;
         esac
@@ -207,46 +207,46 @@ function mattermost_update_message() {
         exit 1
     fi
 
-    local POST_ID="${1}"
-    if [ "$POST_ID" == "" ]; then
-        echo "ERROR: аргумент POST_ID не задан или пустой."
+    local _POST_ID="${1}"
+    if [ "$_POST_ID" == "" ]; then
+        echo "ERROR: аргумент _POST_ID не задан или пустой."
         exit 1
     fi
 
-    local NEW_MESSAGE="${2}"
-    if [ "$NEW_MESSAGE" == "" ]; then
-        echo "ERROR: аргумент NEW_MESSAGE не задан или пустой."
+    local _NEW_MESSAGE="${2}"
+    if [ "$_NEW_MESSAGE" == "" ]; then
+        echo "ERROR: аргумент _NEW_MESSAGE не задан или пустой."
         exit 1
     fi
 
-    local DATE=$(date '+%d.%m.%Y')
-    local TEXT=`echo "$NEW_MESSAGE" | sed -e "s/{DATE}/$DATE/g"`
-    local REQ_DATA=$(jq -c --null-input --arg message "$TEXT" '{"message": $message}')
+    local _DATE=$(date '+%d.%m.%Y')
+    local _TEXT=`echo "$_NEW_MESSAGE" | sed -e "s/{DATE}/$_DATE/g"`
+    local _REQ_DATA=$(jq -c --null-input --arg message "$_TEXT" '{"message": $message}')
 
-    local API_URL="api/v4/posts/$POST_ID/patch"
-    local TRIED_RELOGIN="false"
+    local _API_URL="api/v4/posts/$_POST_ID/patch"
+    local _TRIED_RELOGIN="false"
 
     while true; do
-        local CURL_RESPONSE_FILE=$(mktemp)
-        local RESPONSE_STATUS=$(curl -s -o $CURL_RESPONSE_FILE -w "%{http_code}" -H "Authorization: Bearer $MATTERMOST_TOKEN" -H "Content-Type: application/json; charset=utf-8" -X PUT -d "${REQ_DATA//\\\\n/\\n}" "$MATTERMOST_BASE_URL/$API_URL" | tr -d '\r')
-        local RESPONSE=$(head -n 1 $CURL_RESPONSE_FILE)
-        rm $CURL_RESPONSE_FILE
+        local _CURL_RESPONSE_FILE=$(mktemp)
+        local _RESPONSE_STATUS=$(curl -s -o $_CURL_RESPONSE_FILE -w "%{http_code}" -H "Authorization: Bearer $MATTERMOST_TOKEN" -H "Content-Type: application/json; charset=utf-8" -X PUT -d "${_REQ_DATA//\\\\n/\\n}" "$MATTERMOST_BASE_URL/$_API_URL" | tr -d '\r')
+        local _RESPONSE=$(head -n 1 $_CURL_RESPONSE_FILE)
+        rm $_CURL_RESPONSE_FILE
 
-        case "$RESPONSE_STATUS" in
+        case "$_RESPONSE_STATUS" in
         200)
             return 0
             ;;
         401)
-            if [ "$TRIED_RELOGIN" == "false" ]; then
+            if [ "$_TRIED_RELOGIN" == "false" ]; then
                 mattermost_auth
-                TRIED_RELOGIN="true"
+                _TRIED_RELOGIN="true"
             else
-                echo "ERROR: запрос /$API_URL вернул статус = $RESPONSE_STATUS. ПОВТОРНО! Raw response: $RESPONSE"
+                echo "ERROR: запрос /$_API_URL вернул статус = $_RESPONSE_STATUS. ПОВТОРНО! Raw response: $_RESPONSE"
                 return 1
             fi
             ;;
         *)
-            echo "ERROR: запрос /$API_URL вернул статус = $RESPONSE_STATUS. Raw response: $RESPONSE"
+            echo "ERROR: запрос /$_API_URL вернул статус = $_RESPONSE_STATUS. Raw response: $_RESPONSE"
             return 1
             ;;
         esac
@@ -265,55 +265,55 @@ function mattermost_create_reaction() {
         exit 1
     fi
 
-    local POST_ID="${1}"
-    if [ "$POST_ID" == "" ]; then
-        echo "ERROR: аргумент POST_ID не задан или пустой."
+    local _POST_ID="${1}"
+    if [ "$_POST_ID" == "" ]; then
+        echo "ERROR: аргумент _POST_ID не задан или пустой."
         exit 1
     fi
 
-    local EMOJI_NAME="${2}"
-    if [ "$EMOJI_NAME" == "" ]; then
-        echo "ERROR: аргумент EMOJI_NAME не задан или пустой."
+    local _EMOJI_NAME="${2}"
+    if [ "$_EMOJI_NAME" == "" ]; then
+        echo "ERROR: аргумент _EMOJI_NAME не задан или пустой."
         exit 1
     fi
 
-    local REACTING_USER_ID="5cqj47g3g3gt5yb7oprc7msj1c"
+    local _REACTING_USER_ID="5cqj47g3g3gt5yb7oprc7msj1c"
     if [ "$MM_REACTING_USER_ID" != "" ]; then
-        REACTING_USER_ID="${MM_REACTING_USER_ID}"
+        _REACTING_USER_ID="${MM_REACTING_USER_ID}"
     fi
 
-    local REQ_DATA=$(jq -c --null-input \
-      --arg user_id "$REACTING_USER_ID" \
-      --arg post_id "$POST_ID" \
-      --arg emoji_name "$EMOJI_NAME" \
+    local _REQ_DATA=$(jq -c --null-input \
+      --arg user_id "$_REACTING_USER_ID" \
+      --arg post_id "$_POST_ID" \
+      --arg emoji_name "$_EMOJI_NAME" \
       '{"user_id": $user_id, "post_id": $post_id, "emoji_name": $emoji_name}')
 
     # Updating message
 
-    local API_URL="api/v4/reactions"
-    local TRIED_RELOGIN="false"
+    local _API_URL="api/v4/reactions"
+    local _TRIED_RELOGIN="false"
 
     while true; do
-        local CURL_RESPONSE_FILE=$(mktemp)
-        local RESPONSE_STATUS=$(curl -s -o $CURL_RESPONSE_FILE -w "%{http_code}" -H "Authorization: Bearer $MATTERMOST_TOKEN" -H "Content-Type: application/json; charset=utf-8" -X POST -d "${REQ_DATA//\\\\n/\\n}" "$MATTERMOST_BASE_URL/$API_URL" | tr -d '\r')
-        local RESPONSE=$(head -n 1 $CURL_RESPONSE_FILE)
-        rm $CURL_RESPONSE_FILE
+        local _CURL_RESPONSE_FILE=$(mktemp)
+        local _RESPONSE_STATUS=$(curl -s -o $_CURL_RESPONSE_FILE -w "%{http_code}" -H "Authorization: Bearer $MATTERMOST_TOKEN" -H "Content-Type: application/json; charset=utf-8" -X POST -d "${_REQ_DATA//\\\\n/\\n}" "$MATTERMOST_BASE_URL/$_API_URL" | tr -d '\r')
+        local _RESPONSE=$(head -n 1 $_CURL_RESPONSE_FILE)
+        rm $_CURL_RESPONSE_FILE
 
-        case "$RESPONSE_STATUS" in
+        case "$_RESPONSE_STATUS" in
         200)
             return 0
             ;;
         401)
-            if [ "$TRIED_RELOGIN" == "false" ]; then
+            if [ "$_TRIED_RELOGIN" == "false" ]; then
                 mattermost_auth
-                TRIED_RELOGIN="true"
+                _TRIED_RELOGIN="true"
             else
-                echo "ERROR: запрос /$API_URL вернул статус = $RESPONSE_STATUS. ПОВТОРНО! Raw response: $RESPONSE"
+                echo "ERROR: запрос /$_API_URL вернул статус = $_RESPONSE_STATUS. ПОВТОРНО! Raw response: $_RESPONSE"
                 return 1
             fi
             ;;
         *)
-            echo "ERROR: запрос /$API_URL вернул статус = $RESPONSE_STATUS. Raw response: $RESPONSE"
+            echo "ERROR: запрос /$_API_URL вернул статус = $_RESPONSE_STATUS. Raw response: $_RESPONSE"
             return 1
             ;;
         esac

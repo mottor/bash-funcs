@@ -80,7 +80,7 @@ function mattermost_auth() {
     fi
 
     if [ -z "$MM_TOKEN_PATH" ]; then
-        MM_TOKEN_PATH="./mattermost_token"
+        export MM_TOKEN_PATH="./mattermost_token"
     fi
 
     if [ -f "$MM_TOKEN_PATH" ]; then
@@ -95,13 +95,13 @@ function mattermost_auth() {
             exit 1
         fi
 
-        API_URL="api/v4/users/login"
-        REQ_DATA=$(jq -c --null-input --arg user "$MM_USER" --arg pass "$MM_PASS" '{"login_id": $user, "password": $pass}')
-        RESPONSE=$(curl -s -i -H "Content-Type: application/json; charset=utf-8" -X POST -d "$REQ_DATA" "$MATTERMOST_BASE_URL/$API_URL" | tr -d '\r')
-        RESPONSE_STATUS=$(echo "$RESPONSE" | grep "HTTP/" | cut -d' ' -f 2)
+        local API_URL="api/v4/users/login"
+        local REQ_DATA=$(jq -c --null-input --arg user "$MM_USER" --arg pass "$MM_PASS" '{"login_id": $user, "password": $pass}')
+        local RESPONSE=$(curl -s -i -H "Content-Type: application/json; charset=utf-8" -X POST -d "$REQ_DATA" "$MATTERMOST_BASE_URL/$API_URL" | tr -d '\r')
+        local RESPONSE_STATUS=$(echo "$RESPONSE" | grep "HTTP/" | cut -d' ' -f 2)
 
         if [ "$RESPONSE_STATUS" == "200" ]; then
-            TOKEN=$(echo "$RESPONSE" | grep -Fi token | awk 'BEGIN {FS=": "}/^token/{print $2}')
+            local TOKEN=$(echo "$RESPONSE" | grep -Fi token | awk 'BEGIN {FS=": "}/^token/{print $2}')
             if [ "$TOKEN" != "" ]; then
                 echo -n "$TOKEN" > "$MM_TOKEN_PATH"
                 export MATTERMOST_TOKEN="$TOKEN"
@@ -131,19 +131,19 @@ function mattermost_post_message() {
         exit 1
     fi
 
-    CHANNEL_ID="$1"
+    local CHANNEL_ID="$1"
     if [ "$CHANNEL_ID" == "" ]; then
         echo "ERROR: аргумент CHANNEL_ID не задан или пустой."
         exit 1
     fi
 
-    MESSAGE="$2"
+    local MESSAGE="$2"
     if [ "$MESSAGE" == "" ]; then
         echo "ERROR: аргумент MESSAGE не задан или пустой."
         exit 1
     fi
 
-    ROOT_POST_ID="${3:-}"
+    local ROOT_POST_ID="${3:-}"
 
     case "$CHANNEL_ID" in
     team_dev)
@@ -155,21 +155,21 @@ function mattermost_post_message() {
     *)
     esac
 
-    DATE=$(date '+%d.%m.%Y')
-    TEXT=`echo "$MESSAGE" | sed -e "s/{DATE}/$DATE/g"`
-    REQ_DATA=$(jq -c --null-input --arg channel_id "$CHANNEL_ID" --arg message "$TEXT" '{"channel_id": $channel_id, "message": $message, "props":{}}')
+    local DATE=$(date '+%d.%m.%Y')
+    local TEXT=`echo "$MESSAGE" | sed -e "s/{DATE}/$DATE/g"`
+    local REQ_DATA=$(jq -c --null-input --arg channel_id "$CHANNEL_ID" --arg message "$TEXT" '{"channel_id": $channel_id, "message": $message, "props":{}}')
 
     if [ "$ROOT_POST_ID" != "" ]; then
         REQ_DATA=$(echo $REQ_DATA | jq -c --arg root_post_id "$ROOT_POST_ID" '.root_id = $root_post_id')
     fi
 
-    API_URL="api/v4/posts"
-    TRIED_RELOGIN="false"
+    local API_URL="api/v4/posts"
+    local TRIED_RELOGIN="false"
 
     while true; do
-        CURL_RESPONSE_FILE=$(mktemp)
-        RESPONSE_STATUS=$(curl -s -o $CURL_RESPONSE_FILE -w "%{http_code}" -H "Authorization: Bearer $MATTERMOST_TOKEN" -H "Content-Type: application/json; charset=utf-8" -X POST -d "${REQ_DATA//\\\\n/\\n}" "$MATTERMOST_BASE_URL/$API_URL" | tr -d '\r')
-        RESPONSE=$(head -n 1 $CURL_RESPONSE_FILE)
+        local CURL_RESPONSE_FILE=$(mktemp)
+        local RESPONSE_STATUS=$(curl -s -o $CURL_RESPONSE_FILE -w "%{http_code}" -H "Authorization: Bearer $MATTERMOST_TOKEN" -H "Content-Type: application/json; charset=utf-8" -X POST -d "${REQ_DATA//\\\\n/\\n}" "$MATTERMOST_BASE_URL/$API_URL" | tr -d '\r')
+        local RESPONSE=$(head -n 1 $CURL_RESPONSE_FILE)
         rm $CURL_RESPONSE_FILE
 
         case "$RESPONSE_STATUS" in

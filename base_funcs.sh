@@ -238,7 +238,7 @@ function mattermost_update_message() {
             ;;
         401)
             if [ "$TRIED_RELOGIN" == "false" ]; then
-                mattermost_auth "$MATTERMOST_BASE_URL"
+                mattermost_auth
                 TRIED_RELOGIN="true"
             else
                 echo "ERROR: запрос /$API_URL вернул статус = $RESPONSE_STATUS. ПОВТОРНО! Raw response: $RESPONSE"
@@ -305,7 +305,7 @@ function mattermost_create_reaction() {
             ;;
         401)
             if [ "$TRIED_RELOGIN" == "false" ]; then
-                mattermost_auth "$MATTERMOST_BASE_URL"
+                mattermost_auth
                 TRIED_RELOGIN="true"
             else
                 echo "ERROR: запрос /$API_URL вернул статус = $RESPONSE_STATUS. ПОВТОРНО! Raw response: $RESPONSE"

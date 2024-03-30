@@ -20,32 +20,40 @@ export PARTY_POPPER_MARK="\U0001F389"
 
 # =================================================================================
 
-logMessage() {
+printMessage() {
     echo -e "${LIGHT_GRAY}base_funcs:${NC} $@"
 }
 
-logRed() {
+printRed() {
     echo -e "${LIGHT_GRAY}base_funcs:${NC} ${RED}$@${NC}"
 }
 
-logGreen() {
+printGreen() {
     echo -e "${LIGHT_GRAY}base_funcs:${NC} ${GREEN}$@${NC}"
 }
 
-logYellow() {
+printYellow() {
     echo -e "${LIGHT_GRAY}base_funcs:${NC} ${YELLOW}$@${NC}"
 }
 
-logBlue() {
+printBlue() {
     echo -e "${LIGHT_GRAY}base_funcs:${NC} ${BLUE}$@${NC}"
 }
 
-logPurple() {
+printPurple() {
     echo -e "${LIGHT_GRAY}base_funcs:${NC} ${PURPLE}$@${NC}"
 }
 
-logCyan() {
+printCyan() {
     echo -e "${LIGHT_GRAY}base_funcs:${NC} ${CYAN}$@${NC}"
+}
+
+logMessage() {
+    if [ "$DEBUG" != "" ]; then
+        LOG_FILE="${1}"
+        MESSAGE="${2}"
+        echo "$MESSAGE" >> $LOG_FILE
+    fi
 }
 
 # =================================================================================

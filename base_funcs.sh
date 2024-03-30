@@ -239,7 +239,7 @@ function mattermost_update_message() {
 
 # Args:
 # - post id
-# - emoji name
+# - emoji name (example: 'x', 'white_check_mark')
 #
 # Envs: MATTERMOST_BASE_URL, MM_REACTING_USER_ID
 #

@@ -176,7 +176,7 @@ function mattermost_post_message() {
             POST_ID=$(echo $RESPONSE | jq -r ".id")
             echo "$POST_ID"
             break
-        elif [ "$RESPONSE_STATUS" == "403" ]; then
+        elif [ "$RESPONSE_STATUS" == "401" ]; then
             if [ $ATTEMPT -eq 0 ]; then
                 mattermost_auth
             else
@@ -230,7 +230,7 @@ function mattermost_update_message() {
 
         if [ "$RESPONSE_STATUS" == "200" ]; then
             break
-        elif [ "$RESPONSE_STATUS" == "403" ]; then
+        elif [ "$RESPONSE_STATUS" == "401" ]; then
             if [ $ATTEMPT -eq 0 ]; then
                 mattermost_auth "$MATTERMOST_BASE_URL"
             else
@@ -293,7 +293,7 @@ function mattermost_create_reaction() {
 
         if [ "$RESPONSE_STATUS" == "200" ]; then
             break
-        elif [ "$RESPONSE_STATUS" == "403" ]; then
+        elif [ "$RESPONSE_STATUS" == "401" ]; then
             if [ $ATTEMPT -eq 0 ]; then
                 mattermost_auth "$MATTERMOST_BASE_URL"
             else

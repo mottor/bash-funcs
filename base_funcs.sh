@@ -335,8 +335,6 @@ function mattermost_create_reaction() {
       --arg emoji_name "$_EMOJI_NAME" \
       '{"user_id": $user_id, "post_id": $post_id, "emoji_name": $emoji_name}')
 
-    # Updating message
-
     local _API_URL="api/v4/reactions"
     local _API_METHOD="POST"
     local _TRIED_RELOGIN="false"
@@ -391,21 +389,13 @@ function mattermost_delete_reaction() {
         _REACTING_USER_ID="${MM_REACTING_USER_ID}"
     fi
 
-    local _REQ_DATA=$(jq -c --null-input \
-      --arg user_id "$_REACTING_USER_ID" \
-      --arg post_id "$_POST_ID" \
-      --arg emoji_name "$_EMOJI_NAME" \
-      '{"user_id": $user_id, "post_id": $post_id, "emoji_name": $emoji_name}')
-
-    # Updating message
-
-    local _API_URL="api/v4/reactions"
+    local _API_URL="api/v4/users/$_REACTING_USER_ID/posts/$_POST_ID/reactions/$_EMOJI_NAME"
     local _API_METHOD="DELETE"
     local _TRIED_RELOGIN="false"
 
     while true; do
         local _CURL_RESPONSE_FILE=$(mktemp)
-        local _RESPONSE_STATUS=$(curl -s -o $_CURL_RESPONSE_FILE -w "%{http_code}" -H "Authorization: Bearer $MATTERMOST_TOKEN" -H "Content-Type: application/json; charset=utf-8" -X $_API_METHOD -d "${_REQ_DATA//\\\\n/\\n}" "$MATTERMOST_BASE_URL/$_API_URL" | tr -d '\r')
+        local _RESPONSE_STATUS=$(curl -s -o $_CURL_RESPONSE_FILE -w "%{http_code}" -H "Authorization: Bearer $MATTERMOST_TOKEN" -H "Content-Type: application/json; charset=utf-8" -X $_API_METHOD "$MATTERMOST_BASE_URL/$_API_URL" | tr -d '\r')
         local _RESPONSE=$(head -n 1 $_CURL_RESPONSE_FILE)
         rm $_CURL_RESPONSE_FILE
 

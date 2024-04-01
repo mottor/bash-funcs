@@ -319,3 +319,46 @@ function mattermost_create_reaction() {
         esac
     done
 }
+
+function mattermost_delete_message() {
+    if [ -z "$MATTERMOST_BASE_URL" ]; then
+        echo "ERROR: не определена переменная MATTERMOST_BASE_URL."
+        exit 1
+    fi
+
+    local _POST_ID="${1}"
+    if [ "$_POST_ID" == "" ]; then
+        echo "ERROR: аргумент _POST_ID не задан или пустой."
+        exit 1
+    fi
+
+    local _API_URL="api/v4/posts/$_POST_ID"
+    local _API_METHOD="DELETE"
+    local _TRIED_RELOGIN="false"
+
+    while true; do
+        local _CURL_RESPONSE_FILE=$(mktemp)
+        local _RESPONSE_STATUS=$(curl -s -o $_CURL_RESPONSE_FILE -w "%{http_code}" -H "Authorization: Bearer $MATTERMOST_TOKEN" -H "Content-Type: application/json; charset=utf-8" -X $_API_METHOD "$MATTERMOST_BASE_URL/$_API_URL" | tr -d '\r')
+        local _RESPONSE=$(head -n 1 $_CURL_RESPONSE_FILE)
+        rm $_CURL_RESPONSE_FILE
+
+        case "$_RESPONSE_STATUS" in
+        200)
+            return 0
+            ;;
+        401)
+            if [ "$_TRIED_RELOGIN" == "false" ]; then
+                mattermost_auth
+                _TRIED_RELOGIN="true"
+            else
+                echo "ERROR: запрос $_API_METHOD /$_API_URL вернул статус = $_RESPONSE_STATUS. ПОВТОРНО! Raw response: $_RESPONSE"
+                return 1
+            fi
+            ;;
+        *)
+            echo "ERROR: запрос $_API_METHOD /$_API_URL вернул статус = $_RESPONSE_STATUS. Raw response: $_RESPONSE"
+            return 1
+            ;;
+        esac
+    done
+}
